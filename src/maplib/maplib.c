@@ -128,7 +128,7 @@ void UnloadMap(map_t* map) {
         map->sectors = NULL;
     }
 
-	if ((size_t)index < mapsCount - 1) {
+	if((size_t)index < mapsCount - 1) {
         memmove(&maps[indexOfMap], &maps[indexOfMap + 1], (mapsCount - indexOfMap - 1) * sizeof(map_t));
     }
 
@@ -142,4 +142,24 @@ void UnloadMap(map_t* map) {
     }
 }
 
-void SaveMap(const char* path, map_t* map);
+void SaveMap(const char* path, map_t* map) {
+	FILE* file = fopen(path, "w");
+	
+	for(size_t i = 0; i < map->sectorsCount; i++) {
+		fprintf(file, "%d;%f;%d;%f;%f;%zu",
+		  map->sectors[i].floor.visible,
+		  map->sectors[i].floor.height,
+		  map->sectors[i].ceiling.visible,
+		  map->sectors[i].ceiling.height,
+		  map->sectors[i].light.level,
+		  map->sectors[i].corners.count
+		);
+
+		for(size_t j = 0; j < map->sectors->corners.count; j++) {
+			fprintf(file, ";%f", map->sectors[i].corners.positions->x);
+			fprintf(file, ";%f", map->sectors[i].corners.positions->y);
+		}
+	}
+
+	fclose(file);
+}
