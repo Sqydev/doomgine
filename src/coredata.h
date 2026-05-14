@@ -36,6 +36,8 @@
 #ifndef DOOMGINE_COREDATA_H
 #define DOOMGINE_COREDATA_H
 
+#include "./maplib/maplib.h"
+
 typedef enum {
 	GAMESTATE_MENU,
 	GAMESTATE_INGAME,
@@ -44,6 +46,12 @@ typedef enum {
 
 typedef struct {
 	Gamestate gamestate;
+
+	struct {
+		map_t* maps;
+		size_t mapsCount;
+		size_t lastId;
+	} maps;
 } CoreData;
 
 extern CoreData DATA;

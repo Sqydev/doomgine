@@ -34,14 +34,13 @@
 */
 
 #include "./maplib.h"
+
+#include "../coredata.h"
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-map_t* maps;
-size_t mapsCount = 0;
-size_t lastId = 0;
 
 int countLines(FILE *file) {
     int count = 0;
@@ -57,9 +56,9 @@ int countLines(FILE *file) {
 }
 
 map_t* GetMapById(size_t id) {
-	for(size_t i = 0; i < mapsCount; i++) {
-        if(maps[i].id == id) {
-            return &maps[i];
+	for(size_t i = 0; i < DATA.maps.mapsCount; i++) {
+        if(DATA.maps.maps[i].id == id) {
+            return &DATA.maps.maps[i];
         }
     }
     return NULL;
@@ -68,11 +67,11 @@ map_t* GetMapById(size_t id) {
 map_t* LoadMap(const char* path) {
 	FILE* file = fopen(path, "r");
 
-	maps = realloc(maps, mapsCount * sizeof(map_t));
+	DATA.maps.maps = realloc(DATA.maps.maps, DATA.maps.mapsCount * sizeof(map_t));
 
-	maps[mapsCount].id = ++lastId;
-	maps[mapsCount].sectorsCount = countLines(file);
-	maps[mapsCount].sectors = realloc(maps[mapsCount].sectors, maps[mapsCount].sectorsCount * sizeof(sector_t));
+	DATA.maps.maps[DATA.maps.mapsCount].id = ++DATA.maps.lastId;
+	DATA.maps.maps[DATA.maps.mapsCount].sectorsCount = countLines(file);
+	DATA.maps.maps[DATA.maps.mapsCount].sectors = realloc(DATA.maps.maps[DATA.maps.mapsCount].sectors, DATA.maps.maps[DATA.maps.mapsCount].sectorsCount * sizeof(sector_t));
 
 	char* line = NULL;
 	size_t lineSize = 0;
@@ -81,19 +80,19 @@ map_t* LoadMap(const char* path) {
 	size_t currentSector = 0;
 
 	while((read = getline(&line, &lineSize, file)) != -1) {
-		maps[mapsCount].sectors[currentSector].floor.visible = atoi(strtok(line, ";"));
-		maps[mapsCount].sectors[currentSector].floor.height = atof(strtok(NULL, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].floor.visible = atoi(strtok(line, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].floor.height = atof(strtok(NULL, ";"));
 
-		maps[mapsCount].sectors[currentSector].ceiling.visible = atoi(strtok(line, ";"));
-		maps[mapsCount].sectors[currentSector].ceiling.height = atof(strtok(NULL, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].ceiling.visible = atoi(strtok(line, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].ceiling.height = atof(strtok(NULL, ";"));
 
-		maps[mapsCount].sectors[currentSector].light.level = atof(strtok(NULL, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].light.level = atof(strtok(NULL, ";"));
 
-		maps[mapsCount].sectors[currentSector].corners.count = atoi(strtok(NULL, ";"));
-		maps[mapsCount].sectors[currentSector].corners.positions = malloc(maps[mapsCount].sectors[currentSector].corners.count * sizeof(Vector2));
-		for(size_t i = 0; i < maps[mapsCount].sectors[currentSector].corners.count; i++) {
-			maps[mapsCount].sectors[currentSector].corners.positions[i].x = atof(strtok(NULL, ";"));
-			maps[mapsCount].sectors[currentSector].corners.positions[i].y = atof(strtok(NULL, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].corners.count = atoi(strtok(NULL, ";"));
+		DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].corners.positions = malloc(DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].corners.count * sizeof(Vector2));
+		for(size_t i = 0; i < DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].corners.count; i++) {
+			DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].corners.positions[i].x = atof(strtok(NULL, ";"));
+			DATA.maps.maps[DATA.maps.mapsCount].sectors[currentSector].corners.positions[i].y = atof(strtok(NULL, ";"));
 		}
 
 		currentSector++;
@@ -103,17 +102,17 @@ map_t* LoadMap(const char* path) {
 
 	fclose(file);
 
-	mapsCount++;
+	DATA.maps.mapsCount++;
 
-	return &maps[mapsCount - 1];
+	return &DATA.maps.maps[DATA.maps.mapsCount - 1];
 }
 
 void UnloadMap(map_t* map) {
-	if(!map || mapsCount == 0) { return; }
+	if(!map || DATA.maps.mapsCount == 0) { return; }
 
-	ptrdiff_t indexOfMap = map - maps; // MATH!
+	ptrdiff_t indexOfMap = map - DATA.maps.maps; // MATH!
 	
-	if(index < 0 || (size_t)index >= mapsCount) {
+	if(indexOfMap < 0 || (size_t)indexOfMap >= DATA.maps.mapsCount) {
         return; 
     }
 
@@ -128,17 +127,17 @@ void UnloadMap(map_t* map) {
         map->sectors = NULL;
     }
 
-	if((size_t)index < mapsCount - 1) {
-        memmove(&maps[indexOfMap], &maps[indexOfMap + 1], (mapsCount - indexOfMap - 1) * sizeof(map_t));
+	if((size_t)index < DATA.maps.mapsCount - 1) {
+        memmove(&DATA.maps.maps[indexOfMap], &DATA.maps.maps[indexOfMap + 1], (DATA.maps.mapsCount - indexOfMap - 1) * sizeof(map_t));
     }
 
-    mapsCount--;
+    DATA.maps.mapsCount--;
 
-    if(mapsCount > 0) {
-        maps = realloc(maps, mapsCount * sizeof(map_t));
+    if(DATA.maps.mapsCount > 0) {
+        DATA.maps.maps = realloc(DATA.maps.maps, DATA.maps.mapsCount * sizeof(map_t));
 	} else {
-    	free(maps);
-    	maps = NULL;
+    	free(DATA.maps.maps);
+    	DATA.maps.maps = NULL;
     }
 }
 
