@@ -35,48 +35,35 @@
 
 #include "./coredata.h"
 #include "./mapmaker/mapmaker.h"
+#include "./cleanup/cleanup.h"
+#include "./init/init.h"
 
 #include <raylib.h>
 
 #include <getopt.h>
-#include <string.h>
 
 CoreData DATA;
 
 int main(int argc, char** argv) {
-	DATA.gamestate = GAMESTATE_MENU;
-
-	struct option long_options[] = {
-		{"mapmaker", no_argument, NULL, 'm'}
-	};
-
-	int optchar;
-	while((optchar = getopt_long(argc, argv, "m", long_options, NULL)) != -1) {
-		switch(optchar) {
-			case 'm': {
-				DATA.gamestate = GAMESTATE_MAPMAKER;
-			}
-		}
-	}
-
-	// TODO: Make proper window size and vars init
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-	InitWindow(0, 0, "Doomgine");
+	Init(&argc, &argv);
 
 	while(!WindowShouldClose()) {
 		switch(DATA.gamestate) {
 			case GAMESTATE_MENU: {
+				CleanUp();
 				return 0;
 			}
 			case GAMESTATE_INGAME: {
+				CleanUp();
 				return 0;
 			}
 			case GAMESTATE_MAPMAKER: {
 				MapMaker();
+				break;
 			}
 		}
 	}
 
-	CloseWindow();
+	CleanUp();
 	return 0;
 }

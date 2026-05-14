@@ -33,6 +33,16 @@
 *    source or binary distribution.
 */
 
+#include <raylib.h>
+
 void MapMaker(void) {
-	
+	// Yes. I remamber that there is another loop. It's planned
+	while(!WindowShouldClose()) {
+		BeginDrawing();
+		ClearBackground(WHITE);
+
+		DrawCircle(0, 0, 20, BLACK);
+
+		EndDrawing();
+	}	
 }

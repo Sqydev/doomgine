@@ -33,27 +33,12 @@
 *    source or binary distribution.
 */
 
-#ifndef DOOMGINE_COREDATA_H
-#define DOOMGINE_COREDATA_H
+#include "./init.h"
 
-#include "./maplib/maplib.h"
+void Init(int* argc, char*** argv) {
+	InitVars();
+	
+	InitGetOpt(argc, argv);
 
-typedef enum {
-	GAMESTATE_MENU,
-	GAMESTATE_INGAME,
-	GAMESTATE_MAPMAKER
-} Gamestate;
-
-typedef struct {
-	Gamestate gamestate;
-
-	struct {
-		map_t* maps;
-		size_t mapsCount;
-		size_t lastId;
-	} maps;
-} CoreData;
-
-extern CoreData DATA;
-
-#endif
+	InitRaylib();
+}

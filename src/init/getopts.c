@@ -33,27 +33,24 @@
 *    source or binary distribution.
 */
 
-#ifndef DOOMGINE_COREDATA_H
-#define DOOMGINE_COREDATA_H
+#include "./init.h"
 
-#include "./maplib/maplib.h"
+#include "../coredata.h"
 
-typedef enum {
-	GAMESTATE_MENU,
-	GAMESTATE_INGAME,
-	GAMESTATE_MAPMAKER
-} Gamestate;
+#include <stdlib.h>
+#include <getopt.h>
 
-typedef struct {
-	Gamestate gamestate;
+void InitGetOpt(int* argc, char*** argv) {
+	struct option long_options[] = {
+		{"mapmaker", no_argument, NULL, 'm'}
+	};
 
-	struct {
-		map_t* maps;
-		size_t mapsCount;
-		size_t lastId;
-	} maps;
-} CoreData;
-
-extern CoreData DATA;
-
-#endif
+	int optchar;
+	while((optchar = getopt_long(*argc, *argv, "m", long_options, NULL)) != -1) {
+		switch(optchar) {
+			case 'm': {
+				DATA.gamestate = GAMESTATE_MAPMAKER;
+			}
+		}
+	}
+}

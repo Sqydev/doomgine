@@ -33,27 +33,13 @@
 *    source or binary distribution.
 */
 
-#ifndef DOOMGINE_COREDATA_H
-#define DOOMGINE_COREDATA_H
+#include "./init.h"
 
-#include "./maplib/maplib.h"
+#include "../coredata.h"
 
-typedef enum {
-	GAMESTATE_MENU,
-	GAMESTATE_INGAME,
-	GAMESTATE_MAPMAKER
-} Gamestate;
+void InitVars(void) {
+	DATA.gamestate = GAMESTATE_MENU;
 
-typedef struct {
-	Gamestate gamestate;
-
-	struct {
-		map_t* maps;
-		size_t mapsCount;
-		size_t lastId;
-	} maps;
-} CoreData;
-
-extern CoreData DATA;
-
-#endif
+	DATA.maps.mapsCount = 0;
+	DATA.maps.lastId = 0;
+}
