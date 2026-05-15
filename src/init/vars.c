@@ -37,9 +37,25 @@
 
 #include "../coredata.h"
 
+#include <raylib.h>
+
 void InitVars(void) {
 	DATA.gamestate = GAMESTATE_MENU;
 
-	DATA.maps.mapsCount = 0;
-	DATA.maps.lastId = 0;
+	DATA.Maps.mapsCount = 0;
+	DATA.Maps.lastId = 0;
+
+	SetConfigFlags(FLAG_WINDOW_HIDDEN);
+	InitWindow(0, 0, "Your personal doomgine monitor parameters spy guy");
+
+	DATA.Info.fps = GetMonitorRefreshRate(GetCurrentMonitor());
+
+	DATA.Info.screenWidth = GetMonitorWidth(GetCurrentMonitor());
+	DATA.Info.screenHeight = GetMonitorHeight(GetCurrentMonitor());
+
+	CloseWindow();
+	ClearWindowState(FLAG_WINDOW_HIDDEN);
+
+	DATA.Info.windowWidth = DATA.Info.screenWidth / 3;
+	DATA.Info.windowHeight = DATA.Info.screenHeight / 3;
 }

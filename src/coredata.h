@@ -48,10 +48,29 @@ typedef struct {
 	Gamestate gamestate;
 
 	struct {
+		unsigned int windowWidth;
+		unsigned int windowHeight;
+
+		unsigned int screenWidth;
+		unsigned int screenHeight;
+
+		unsigned int fps;
+	} Info;
+
+	struct {
+		bool inited;
+
+		map_t map;
+
+		size_t selectedSector;
+		size_t selectedCorner;
+	} MapMaker;
+
+	struct {
 		map_t* maps;
 		size_t mapsCount;
 		size_t lastId;
-	} maps;
+	} Maps;
 } CoreData;
 
 extern CoreData DATA;
