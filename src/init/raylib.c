@@ -35,9 +35,11 @@
 
 #include "./init.h"
 
+#include "../coredata.h"
+
 #include <raylib.h>
 
 void InitRaylib(void) {
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-	InitWindow(0, 0, "Doomgine");
+	InitWindow(DATA.Info.windowWidth, DATA.Info.windowHeight, "Doomgine");
 }

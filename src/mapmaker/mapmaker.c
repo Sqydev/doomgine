@@ -33,16 +33,53 @@
 *    source or binary distribution.
 */
 
+#include "./mapmaker.h"
+
+#include "../coredata.h"
+
 #include <raylib.h>
+#include <stdlib.h>
+
+void InitMapMaker(void) {
+	DATA.MapMaker.inited = true;
+
+	DATA.MapMaker.map.sectorsCount = 0;
+}
 
 void MapMaker(void) {
+	if(!DATA.MapMaker.inited) { InitMapMaker(); }
+
 	// Yes. I remamber that there is another loop. It's planned
-	while(!WindowShouldClose()) {
+	while(DATA.gamestate == GAMESTATE_MAPMAKER) {
 		BeginDrawing();
 		ClearBackground(WHITE);
 
-		DrawCircle(0, 0, 20, BLACK);
+		if(IsKeyReleased(KEY_N)) {
+			DATA.MapMaker.map.sectorsCount++;
+			DATA.MapMaker.map.sectors = realloc(DATA.MapMaker.map.sectors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
+			DATA.MapMaker.selectedSector = DATA.MapMaker.map.sectorsCount;
+			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
+		}
+		if(IsKeyReleased(KEY_C)) {
+			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count++;
+			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = realloc(DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions, DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count);
+			DATA.MapMaker.selectedCorner = DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count;
+			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions[DATA.MapMaker.selectedCorner] = GetMousePosition();
+		}
+
+		for(size_t currSec = 1; currSec < DATA.MapMaker.map.sectorsCount; currSec++) {
+			for(size_t currCorner = 1; currCorner < DATA.MapMaker.map.sectors[currSec].corners.count; currCorner++) {
+				DrawCircle(DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, 10, BLACK);
+			}
+		}
 
 		EndDrawing();
-	}	
+	}
+
+	if(DATA.MapMaker.map.sectors) {
+		for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
+			if(DATA.MapMaker.map.sectors[i].corners.positions) { free(DATA.MapMaker.map.sectors[i].corners.positions); }
+		}
+		free(DATA.MapMaker.map.sectors);
+	}
 }

@@ -40,7 +40,7 @@
 #include <stddef.h>
 
 void UnloadLoadedMaps(void) {
-	for(size_t i = DATA.maps.mapsCount + 1; i > 0; i--) {
-		UnloadMap(&DATA.maps.maps[i - 1]);
+	for(size_t i = DATA.Maps.mapsCount + 1; i > 0; i--) {
+		UnloadMap(&DATA.Maps.maps[i - 1]);
 	}
 }
