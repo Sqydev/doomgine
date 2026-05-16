@@ -38,7 +38,16 @@
 #include "../coredata.h"
 
 #include <raylib.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+const char* text = NULL;
+float timer = 0.0f;
+
+void PushMessage(const char* msg) {
+    text = msg;
+	timer = 2.0f;
+}
 
 void InitMapMaker(void) {
     DATA.MapMaker.inited = true;
@@ -64,12 +73,26 @@ void MapMaker(void) {
 			DATA.MapMaker.selectedSector = DATA.MapMaker.map.sectorsCount - 1;
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = NULL;
+
+			PushMessage("Created new sector");
 		}
 		if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) {
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count++;
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = realloc(DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions, DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count * sizeof(Vector2));
 			DATA.MapMaker.selectedCorner = DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count - 1;
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions[DATA.MapMaker.selectedCorner] = GetMousePosition();
+
+			if(!IsKeyDown(KEY_LEFT_SHIFT)) {
+				for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
+					for(size_t j = 0; j < DATA.MapMaker.map.sectors[i].corners.count; j++) {
+						if(CheckCollisionPointCircle(GetMousePosition(), DATA.MapMaker.map.sectors[i].corners.positions[j], 10)) {
+							DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions[DATA.MapMaker.selectedCorner] = DATA.MapMaker.map.sectors[i].corners.positions[j];
+						}
+					}
+				}
+			}
+
+			PushMessage("Created new corner");
 		}
 
 		for(size_t currSec = 0; currSec < DATA.MapMaker.map.sectorsCount; currSec++) {
@@ -78,6 +101,12 @@ void MapMaker(void) {
 				DrawCircle(DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y, 10, BLACK);
 			}
 		}
+
+		if(timer > 0.0f) {
+        	timer -= GetFrameTime();
+
+        	DrawText(text, 10, 10, ((DATA.Info.windowWidth + DATA.Info.windowHeight) / 2) / 30, GREEN);
+    	}
 
 		EndDrawing();
 	}
