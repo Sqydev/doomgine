@@ -36,18 +36,11 @@
 #include "./mapmaker.h"
 
 #include "../coredata.h"
+#include "../utils/utils.h"
 
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-const char* text = NULL;
-float timer = 0.0f;
-
-void PushMessage(const char* msg) {
-    text = msg;
-	timer = 2.0f;
-}
 
 void InitMapMaker(void) {
     DATA.MapMaker.inited = true;
@@ -57,6 +50,12 @@ void InitMapMaker(void) {
 
     DATA.MapMaker.selectedSector = 0;
     DATA.MapMaker.selectedCorner = 0;
+
+	DATA.MapMaker.camera.offset = (Vector2){ 0, 0 };
+	DATA.MapMaker.camera.rotation = 0;
+	DATA.MapMaker.camera.target = (Vector2){ 0, 0 };
+
+	DATA.MapMaker.sectorColors = NULL;
 }
 
 void MapMaker(void) {
@@ -74,7 +73,8 @@ void MapMaker(void) {
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = NULL;
 
-			PushMessage("Created new sector");
+			DATA.MapMaker.sectorColors = realloc(DATA.MapMaker.sectorColors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
+			DATA.MapMaker.sectorColors[DATA.MapMaker.map.sectorsCount] = GetRandomDarkColor();
 		}
 		if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) {
 			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count++;
@@ -91,22 +91,28 @@ void MapMaker(void) {
 					}
 				}
 			}
-
-			PushMessage("Created new corner");
 		}
 
 		for(size_t currSec = 0; currSec < DATA.MapMaker.map.sectorsCount; currSec++) {
 			for(size_t currCorner = 0; currCorner < DATA.MapMaker.map.sectors[currSec].corners.count; currCorner++) {
-				if(currCorner > 0) { DrawLine(DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner - 1].x, DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner - 1].y, DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y, BLACK); }
-				DrawCircle(DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y, 10, BLACK);
+				size_t next = (currCorner + 1) % DATA.MapMaker.map.sectors[currSec].corners.count;
+
+				DrawLine(
+					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, 
+					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
+					DATA.MapMaker.map.sectors[currSec].corners.positions[next].x,
+					DATA.MapMaker.map.sectors[currSec].corners.positions[next].y,
+					DATA.MapMaker.sectorColors[currSec]
+			 	);
+
+				DrawCircle(
+					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
+					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
+					10,
+					DATA.MapMaker.sectorColors[currSec]
+				);
 			}
 		}
-
-		if(timer > 0.0f) {
-        	timer -= GetFrameTime();
-
-        	DrawText(text, 10, 10, ((DATA.Info.windowWidth + DATA.Info.windowHeight) / 2) / 30, GREEN);
-    	}
 
 		EndDrawing();
 	}

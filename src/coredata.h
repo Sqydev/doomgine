@@ -62,8 +62,12 @@ typedef struct {
 
 		map_t map;
 
+		Camera2D camera;
+
 		size_t selectedSector;
 		size_t selectedCorner;
+
+		Color* sectorColors;
 	} MapMaker;
 
 	struct {
@@ -71,6 +75,9 @@ typedef struct {
 		size_t mapsCount;
 		size_t lastId;
 	} Maps;
+
+	struct {
+	} Utils;
 } CoreData;
 
 extern CoreData DATA;
