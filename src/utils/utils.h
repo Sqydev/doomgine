@@ -39,5 +39,6 @@
 #include <raylib.h>
 
 Color GetRandomDarkColor(void);
+Color GetLighterColor(Color color, float factor);
 
 #endif

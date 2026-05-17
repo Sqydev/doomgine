@@ -41,82 +41,91 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-void InitMapMaker(void) {
-    DATA.MapMaker.inited = true;
-
-    DATA.MapMaker.map.sectorsCount = 0;
-    DATA.MapMaker.map.sectors = NULL;
-
-    DATA.MapMaker.selectedSector = 0;
-    DATA.MapMaker.selectedCorner = 0;
-
-	DATA.MapMaker.camera.offset = (Vector2){ 0, 0 };
-	DATA.MapMaker.camera.rotation = 0;
-	DATA.MapMaker.camera.target = (Vector2){ 0, 0 };
-
-	DATA.MapMaker.sectorColors = NULL;
+ 
+void AddSector(void) {
+	DATA.MapMaker.map.sectorsCount++;
+	DATA.MapMaker.map.sectors = realloc(DATA.MapMaker.map.sectors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
+	DATA.MapMaker.selectedSector = DATA.MapMaker.map.sectorsCount - 1;
+	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
+	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = NULL;
+	DATA.MapMaker.sectorColors = realloc(DATA.MapMaker.sectorColors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
+	DATA.MapMaker.sectorColors[DATA.MapMaker.map.sectorsCount] = GetRandomDarkColor();
 }
-
-void MapMaker(void) {
-	if(!DATA.MapMaker.inited) { InitMapMaker(); }
-
-	// Yes. I remamber that there is another loop. It's planned
-	while(DATA.gamestate == GAMESTATE_MAPMAKER && !WindowShouldClose()) {
-		BeginDrawing();
-		ClearBackground(WHITE);
-
-		if(IsKeyReleased(KEY_N)) {
-			DATA.MapMaker.map.sectorsCount++;
-			DATA.MapMaker.map.sectors = realloc(DATA.MapMaker.map.sectors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
-			DATA.MapMaker.selectedSector = DATA.MapMaker.map.sectorsCount - 1;
-			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
-			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = NULL;
-
-			DATA.MapMaker.sectorColors = realloc(DATA.MapMaker.sectorColors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
-			DATA.MapMaker.sectorColors[DATA.MapMaker.map.sectorsCount] = GetRandomDarkColor();
-		}
-		if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) {
-			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count++;
-			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = realloc(DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions, DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count * sizeof(Vector2));
-			DATA.MapMaker.selectedCorner = DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count - 1;
-			DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions[DATA.MapMaker.selectedCorner] = GetMousePosition();
-
-			if(!IsKeyDown(KEY_LEFT_SHIFT)) {
-				for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
-					for(size_t j = 0; j < DATA.MapMaker.map.sectors[i].corners.count; j++) {
-						if(CheckCollisionPointCircle(GetMousePosition(), DATA.MapMaker.map.sectors[i].corners.positions[j], 10)) {
-							DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions[DATA.MapMaker.selectedCorner] = DATA.MapMaker.map.sectors[i].corners.positions[j];
-						}
-					}
-				}
+ 
+Vector2 SnapToExistingCornerIFItsClose(Vector2 pos) {
+	for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
+		for(size_t j = 0; j < DATA.MapMaker.map.sectors[i].corners.count; j++) {
+			if(CheckCollisionPointCircle(pos, DATA.MapMaker.map.sectors[i].corners.positions[j], 10)) {
+				return DATA.MapMaker.map.sectors[i].corners.positions[j];
 			}
 		}
+	}
+	return pos;
+}
+ 
+void AddCorner(void) {
+	size_t sel = DATA.MapMaker.selectedSector;
 
-		for(size_t currSec = 0; currSec < DATA.MapMaker.map.sectorsCount; currSec++) {
-			for(size_t currCorner = 0; currCorner < DATA.MapMaker.map.sectors[currSec].corners.count; currCorner++) {
-				size_t next = (currCorner + 1) % DATA.MapMaker.map.sectors[currSec].corners.count;
+	DATA.MapMaker.map.sectors[sel].corners.count++;
+	DATA.MapMaker.map.sectors[sel].corners.positions = realloc(DATA.MapMaker.map.sectors[sel].corners.positions, DATA.MapMaker.map.sectors[sel].corners.count * sizeof(Vector2));
+	DATA.MapMaker.selectedCorner = DATA.MapMaker.map.sectors[sel].corners.count - 1;
 
-				DrawLine(
-					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x, 
-					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
-					DATA.MapMaker.map.sectors[currSec].corners.positions[next].x,
-					DATA.MapMaker.map.sectors[currSec].corners.positions[next].y,
-					DATA.MapMaker.sectorColors[currSec]
-			 	);
+	Vector2 pos = GetMousePosition();
 
-				DrawCircle(
+	if(!IsKeyDown(KEY_LEFT_SHIFT)) { pos = SnapToExistingCornerIFItsClose(pos); }
+
+	DATA.MapMaker.map.sectors[sel].corners.positions[DATA.MapMaker.selectedCorner] = pos;
+}
+ 
+void HandleSelection(void) {
+	for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
+		for(size_t j = 0; j < DATA.MapMaker.map.sectors[i].corners.count; j++) {
+			if(CheckCollisionPointCircle(GetMousePosition(), DATA.MapMaker.map.sectors[i].corners.positions[j], 15)) {
+				DATA.MapMaker.selectedSector = i;
+				DATA.MapMaker.selectedCorner = j;
+			}
+		}
+	}
+}
+ 
+void HandleInput(void) {
+	if(IsKeyReleased(KEY_N)) { AddSector(); AddCorner(); }
+	if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) { AddCorner(); }
+	if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) { HandleSelection(); }
+}
+ 
+void DrawSectors(void) {
+	for(size_t currSec = 0; currSec < DATA.MapMaker.map.sectorsCount; currSec++) {
+		for(size_t currCorner = 0; currCorner < DATA.MapMaker.map.sectors[currSec].corners.count; currCorner++) {
+			size_t next = (currCorner + 1) % DATA.MapMaker.map.sectors[currSec].corners.count;
+
+			if(currSec == DATA.MapMaker.selectedSector) {
+				DrawCircleLines(
 					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
 					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
-					10,
+					13,
 					DATA.MapMaker.sectorColors[currSec]
 				);
 			}
+			DrawLine(
+				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
+				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
+				DATA.MapMaker.map.sectors[currSec].corners.positions[next].x,
+				DATA.MapMaker.map.sectors[currSec].corners.positions[next].y,
+				DATA.MapMaker.sectorColors[currSec]
+			);
+
+			DrawCircle(
+				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
+				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
+				10,
+				DATA.MapMaker.sectorColors[currSec]
+			);
 		}
-
-		EndDrawing();
 	}
-
+}
+ 
+void CleanupMapMaker(void) {
 	if(DATA.MapMaker.map.sectors) {
 		for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
 			if(DATA.MapMaker.map.sectors[i].corners.positions) { free(DATA.MapMaker.map.sectors[i].corners.positions); }
@@ -124,3 +133,36 @@ void MapMaker(void) {
 		free(DATA.MapMaker.map.sectors);
 	}
 }
+ 
+void InitMapMaker(void) {
+	DATA.MapMaker.inited = true;
+
+	DATA.MapMaker.map.sectorsCount = 0;
+	DATA.MapMaker.map.sectors = NULL;
+
+	DATA.MapMaker.selectedSector = 0;
+	DATA.MapMaker.selectedCorner = 0;
+		
+	DATA.MapMaker.camera.offset = (Vector2){ 0, 0 };
+	DATA.MapMaker.camera.rotation = 0;
+	DATA.MapMaker.camera.target = (Vector2){ 0, 0 };
+
+	DATA.MapMaker.sectorColors = NULL;
+}
+ 
+void MapMaker(void) {
+	if(!DATA.MapMaker.inited) {
+		InitMapMaker();
+	}
+	
+	while(DATA.gamestate == GAMESTATE_MAPMAKER && !WindowShouldClose()) {
+		BeginDrawing();
+		ClearBackground(WHITE);
+		HandleInput();
+		DrawSectors();
+		EndDrawing();
+	}
+	
+	CleanupMapMaker();
+}
+

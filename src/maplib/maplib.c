@@ -92,8 +92,10 @@ map_t* LoadMap(const char* path) {
 		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].light.level = atof(strtok(NULL, ";"));
 
 		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count = atoi(strtok(NULL, ";"));
-		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.positions = malloc(DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count * sizeof(Vector2));
+		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.exists = malloc(DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count * sizeof(bool));
+		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.exists = malloc(DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count * sizeof(Vector2));
 		for(size_t i = 0; i < DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count; i++) {
+			DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.exists[i] = atoi(strtok(NULL, ";"));
 			DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.positions[i].x = atof(strtok(NULL, ";"));
 			DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.positions[i].y = atof(strtok(NULL, ";"));
 		}
@@ -123,6 +125,10 @@ void UnloadMap(map_t* map) {
 		if(map->sectors[i].corners.positions != NULL) {
 			free(map->sectors[i].corners.positions);
 			map->sectors[i].corners.positions = NULL;
+		}
+		if(map->sectors[i].corners.exists != NULL) {
+			free(map->sectors[i].corners.exists);
+			map->sectors[i].corners.exists = NULL;
 		}
 	}
 	if(map->sectors != NULL) {
@@ -158,6 +164,7 @@ void SaveMap(const char* path, map_t* map) {
 		);
 
 		for(size_t j = 0; j < map->sectors[i].corners.count; j++) {
+			fprintf(file, ";%d", map->sectors[i].corners.exists[j]);
 			fprintf(file, ";%f", map->sectors[i].corners.positions[j].x);
 			fprintf(file, ";%f", map->sectors[i].corners.positions[j].y);
 		}

@@ -54,8 +54,9 @@ typedef struct {
 	} ceiling;
 
 	struct {
-		size_t count;
+		bool* exists;
 		Vector2* positions;
+		size_t count;
 	} corners;
 
 	struct {

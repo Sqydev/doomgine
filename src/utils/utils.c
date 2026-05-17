@@ -64,3 +64,13 @@ Color GetRandomDarkColor(void) {
 
     return c;
 }
+
+
+Color GetLighterColor(Color color, float factor) {
+	return (Color){
+		color.r * factor,
+		color.g * factor,
+		color.b * factor,
+		color.a
+	};
+}
