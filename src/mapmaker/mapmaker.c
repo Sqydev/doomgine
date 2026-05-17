@@ -34,28 +34,36 @@
 */
 
 #include "./mapmaker.h"
-
+ 
 #include "../coredata.h"
 #include "../utils/utils.h"
-
+ 
+#include <math.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
  
+Vector2 SnapToGrid(Vector2 pos) { return (Vector2){ roundf(pos.x), roundf(pos.y) }; }
+ 
 void AddSector(void) {
 	DATA.MapMaker.map.sectorsCount++;
 	DATA.MapMaker.map.sectors = realloc(DATA.MapMaker.map.sectors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
+
 	DATA.MapMaker.selectedSector = DATA.MapMaker.map.sectorsCount - 1;
+
 	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
 	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = NULL;
-	DATA.MapMaker.sectorColors = realloc(DATA.MapMaker.sectorColors, DATA.MapMaker.map.sectorsCount * sizeof(sector_t));
-	DATA.MapMaker.sectorColors[DATA.MapMaker.map.sectorsCount] = GetRandomDarkColor();
+
+	DATA.MapMaker.sectorColors = realloc(DATA.MapMaker.sectorColors, DATA.MapMaker.map.sectorsCount * sizeof(Color));
+	DATA.MapMaker.sectorColors[DATA.MapMaker.map.sectorsCount - 1] = GetRandomDarkColor();
 }
  
 Vector2 SnapToExistingCornerIFItsClose(Vector2 pos) {
 	for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
 		for(size_t j = 0; j < DATA.MapMaker.map.sectors[i].corners.count; j++) {
-			if(CheckCollisionPointCircle(pos, DATA.MapMaker.map.sectors[i].corners.positions[j], 10)) {
+			if(DATA.MapMaker.isDragging && i == DATA.MapMaker.draggedSector && j == DATA.MapMaker.draggedCorner) { continue; }
+
+			if(CheckCollisionPointCircle(pos, DATA.MapMaker.map.sectors[i].corners.positions[j], 0.4f)) {
 				return DATA.MapMaker.map.sectors[i].corners.positions[j];
 			}
 		}
@@ -65,26 +73,77 @@ Vector2 SnapToExistingCornerIFItsClose(Vector2 pos) {
  
 void AddCorner(void) {
 	size_t sel = DATA.MapMaker.selectedSector;
-
+ 
 	DATA.MapMaker.map.sectors[sel].corners.count++;
 	DATA.MapMaker.map.sectors[sel].corners.positions = realloc(DATA.MapMaker.map.sectors[sel].corners.positions, DATA.MapMaker.map.sectors[sel].corners.count * sizeof(Vector2));
 	DATA.MapMaker.selectedCorner = DATA.MapMaker.map.sectors[sel].corners.count - 1;
-
-	Vector2 pos = GetMousePosition();
-
+ 
+	Vector2 pos = GetScreenToWorld2D(GetMousePosition(), DATA.MapMaker.camera);
+ 
+	if(!IsKeyDown(KEY_LEFT_CONTROL)) { pos = SnapToGrid(pos); }
 	if(!IsKeyDown(KEY_LEFT_SHIFT)) { pos = SnapToExistingCornerIFItsClose(pos); }
-
+ 
 	DATA.MapMaker.map.sectors[sel].corners.positions[DATA.MapMaker.selectedCorner] = pos;
 }
  
 void HandleSelection(void) {
+	Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), DATA.MapMaker.camera);
+	float radius = 15.0f / DATA.MapMaker.camera.zoom;
+ 
 	for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
 		for(size_t j = 0; j < DATA.MapMaker.map.sectors[i].corners.count; j++) {
-			if(CheckCollisionPointCircle(GetMousePosition(), DATA.MapMaker.map.sectors[i].corners.positions[j], 15)) {
+			if(CheckCollisionPointCircle(mouseWorld, DATA.MapMaker.map.sectors[i].corners.positions[j], radius)) {
 				DATA.MapMaker.selectedSector = i;
 				DATA.MapMaker.selectedCorner = j;
+
+				DATA.MapMaker.isDragging = true;
+
+				DATA.MapMaker.draggedSector = i;
+				DATA.MapMaker.draggedCorner = j;
+
+				return;
 			}
 		}
+	}
+}
+ 
+void HandleCamera(void) {
+	if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+		Vector2 delta = GetMouseDelta();
+
+		DATA.MapMaker.camera.target.x -= delta.x / DATA.MapMaker.camera.zoom;
+		DATA.MapMaker.camera.target.y -= delta.y / DATA.MapMaker.camera.zoom;
+	}
+ 
+	float wheel = GetMouseWheelMove();
+	if(wheel != 0) {
+		Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), DATA.MapMaker.camera);
+
+		DATA.MapMaker.camera.zoom *= (1.0f + wheel * 0.1f);
+
+		if(DATA.MapMaker.camera.zoom < 4.0f) { DATA.MapMaker.camera.zoom = 4.0f; }
+		if(DATA.MapMaker.camera.zoom > 200.0f) { DATA.MapMaker.camera.zoom = 200.0f; }
+
+		Vector2 newMouseWorld = GetScreenToWorld2D(GetMousePosition(), DATA.MapMaker.camera);
+
+		DATA.MapMaker.camera.target.x += mouseWorld.x - newMouseWorld.x;
+		DATA.MapMaker.camera.target.y += mouseWorld.y - newMouseWorld.y;
+	}
+}
+ 
+void HandleDrag(void) {
+	if(!DATA.MapMaker.isDragging) { return; }
+ 
+	if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+		Vector2 pos = GetScreenToWorld2D(GetMousePosition(), DATA.MapMaker.camera);
+
+		if(!IsKeyDown(KEY_LEFT_CONTROL)) { pos = SnapToGrid(pos); }
+		if(!IsKeyDown(KEY_LEFT_SHIFT)) { pos = SnapToExistingCornerIFItsClose(pos); }
+
+		DATA.MapMaker.map.sectors[DATA.MapMaker.draggedSector].corners.positions[DATA.MapMaker.draggedCorner] = pos;
+	}
+	else {
+		DATA.MapMaker.isDragging = false;
 	}
 }
  
@@ -92,6 +151,20 @@ void HandleInput(void) {
 	if(IsKeyReleased(KEY_N)) { AddSector(); AddCorner(); }
 	if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) { AddCorner(); }
 	if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) { HandleSelection(); }
+	HandleCamera();
+	HandleDrag();
+}
+ 
+void DrawMYGrid(void) {
+	Vector2 topLeft = GetScreenToWorld2D((Vector2){ 0, 0 }, DATA.MapMaker.camera);
+	Vector2 bottomRight = GetScreenToWorld2D((Vector2){ (float)DATA.Info.screenWidth, (float)DATA.Info.screenHeight }, DATA.MapMaker.camera);
+ 
+	for(int x = (int)floorf(topLeft.x); x <= (int)ceilf(bottomRight.x); x++) {
+		DrawLine(x, (int)floorf(topLeft.y), x, (int)ceilf(bottomRight.y), LIGHTGRAY);
+	}
+	for(int y = (int)floorf(topLeft.y); y <= (int)ceilf(bottomRight.y); y++) {
+		DrawLine((int)floorf(topLeft.x), y, (int)ceilf(bottomRight.x), y, LIGHTGRAY);
+	}
 }
  
 void DrawSectors(void) {
@@ -99,28 +172,14 @@ void DrawSectors(void) {
 		for(size_t currCorner = 0; currCorner < DATA.MapMaker.map.sectors[currSec].corners.count; currCorner++) {
 			size_t next = (currCorner + 1) % DATA.MapMaker.map.sectors[currSec].corners.count;
 
+			Vector2 current = DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner];
+			Vector2 nextV = DATA.MapMaker.map.sectors[currSec].corners.positions[next];
+ 
 			if(currSec == DATA.MapMaker.selectedSector) {
-				DrawCircleLines(
-					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
-					DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
-					13,
-					DATA.MapMaker.sectorColors[currSec]
-				);
+				DrawCircleLinesV(current, 0.65f, DATA.MapMaker.sectorColors[currSec]);
 			}
-			DrawLine(
-				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
-				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
-				DATA.MapMaker.map.sectors[currSec].corners.positions[next].x,
-				DATA.MapMaker.map.sectors[currSec].corners.positions[next].y,
-				DATA.MapMaker.sectorColors[currSec]
-			);
-
-			DrawCircle(
-				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].x,
-				DATA.MapMaker.map.sectors[currSec].corners.positions[currCorner].y,
-				10,
-				DATA.MapMaker.sectorColors[currSec]
-			);
+			DrawLineV(current, nextV, DATA.MapMaker.sectorColors[currSec]);
+			DrawCircleV(current, 0.5f, DATA.MapMaker.sectorColors[currSec]);
 		}
 	}
 }
@@ -136,33 +195,47 @@ void CleanupMapMaker(void) {
  
 void InitMapMaker(void) {
 	DATA.MapMaker.inited = true;
-
+ 
 	DATA.MapMaker.map.sectorsCount = 0;
 	DATA.MapMaker.map.sectors = NULL;
-
+ 
 	DATA.MapMaker.selectedSector = 0;
 	DATA.MapMaker.selectedCorner = 0;
-		
+ 
 	DATA.MapMaker.camera.offset = (Vector2){ 0, 0 };
 	DATA.MapMaker.camera.rotation = 0;
 	DATA.MapMaker.camera.target = (Vector2){ 0, 0 };
-
+	DATA.MapMaker.camera.zoom = 20.0f;
+ 
 	DATA.MapMaker.sectorColors = NULL;
+
+	DATA.MapMaker.isDragging = false;
+
+	DATA.MapMaker.draggedSector = 0;
+	DATA.MapMaker.draggedCorner = 0;
 }
  
 void MapMaker(void) {
 	if(!DATA.MapMaker.inited) {
 		InitMapMaker();
 	}
-	
+ 
 	while(DATA.gamestate == GAMESTATE_MAPMAKER && !WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(WHITE);
+ 
 		HandleInput();
+ 
+		BeginMode2D(DATA.MapMaker.camera);
+
+		DrawMYGrid();
 		DrawSectors();
+
+		EndMode2D();
+ 
 		EndDrawing();
 	}
-	
+ 
 	CleanupMapMaker();
 }
 

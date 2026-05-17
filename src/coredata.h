@@ -64,8 +64,13 @@ typedef struct {
 
 		Camera2D camera;
 
+		bool isDragging;
+
 		size_t selectedSector;
 		size_t selectedCorner;
+
+		size_t draggedSector;
+		size_t draggedCorner;
 
 		Color* sectorColors;
 	} MapMaker;
