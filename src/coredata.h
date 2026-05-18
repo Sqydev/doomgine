@@ -41,7 +41,7 @@
 typedef enum {
 	GAMESTATE_MENU,
 	GAMESTATE_INGAME,
-	GAMESTATE_MAPMAKER
+	GAMESTATE_MAPMAKER,
 } Gamestate;
 
 typedef struct {
@@ -73,6 +73,13 @@ typedef struct {
 		size_t draggedCorner;
 
 		Color* sectorColors;
+
+		bool saveMode;
+		bool loadMode;
+
+		char* path;
+		size_t lenghtOfPath;
+		size_t sizeOfPath;
 	} MapMaker;
 
 	struct {

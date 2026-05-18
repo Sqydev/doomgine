@@ -77,4 +77,6 @@ void SaveMap(const char* path, map_t* map);
 map_t* LoadMap(const char* path);
 void UnloadMap(map_t* map);
 
+void CopyMap(map_t* dst, const map_t* src);
+
 #endif

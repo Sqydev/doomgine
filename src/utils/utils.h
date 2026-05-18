@@ -37,8 +37,11 @@
 #define DOOMGINE_UTILS_H
 
 #include <raylib.h>
+#include <stddef.h>
 
 Color GetRandomDarkColor(void);
 Color GetLighterColor(Color color, float factor);
+
+void DoPathInput(char** path, size_t* lengthOfPath, size_t* sizeOfPath);
 
 #endif

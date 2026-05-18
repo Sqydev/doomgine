@@ -38,6 +38,7 @@
 #include "../coredata.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 Color GetRandomDarkColor(void) {
     Color c;
@@ -73,4 +74,47 @@ Color GetLighterColor(Color color, float factor) {
 		color.b * factor,
 		color.a
 	};
+}
+
+void DoPathInput(char** path, size_t* lengthOfPath, size_t* sizeOfPath) {
+    if(*path == NULL) {
+        *sizeOfPath = 16;
+        *lengthOfPath = 0;
+
+        *path = malloc(*sizeOfPath);
+
+        if(*path) { (*path)[0] = '\0'; }
+    }
+
+    Rectangle box = { 10, 10, 500, 40 };
+
+    int key = GetCharPressed();
+
+    while(key > 0) {
+        if(key >= 32 && key <= 126) {
+            if(*lengthOfPath + 1 >= *sizeOfPath) {
+                *sizeOfPath *= 2;
+
+                char* temp = realloc(*path, *sizeOfPath);
+
+                if(temp) { *path = temp; }
+            }
+
+            (*path)[(*lengthOfPath)++] = (char)key;
+            (*path)[*lengthOfPath] = '\0';
+        }
+
+        key = GetCharPressed();
+    }
+
+    if(IsKeyPressed(KEY_BACKSPACE) && *lengthOfPath > 0) {
+        (*lengthOfPath)--;
+
+        (*path)[*lengthOfPath] = '\0';
+    }
+
+    DrawRectangleRec(box, WHITE);
+    DrawRectangleLinesEx(box, 2, BLACK);
+
+    DrawText(*path, 15, 20, 20, BLACK);
 }

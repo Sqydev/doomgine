@@ -37,6 +37,7 @@
 
 #include "../coredata.h"
 
+#include <raylib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,7 +94,7 @@ map_t* LoadMap(const char* path) {
 
 		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count = atoi(strtok(NULL, ";"));
 		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.exists = malloc(DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count * sizeof(bool));
-		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.exists = malloc(DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count * sizeof(Vector2));
+		DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.positions = malloc(DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count * sizeof(Vector2));
 		for(size_t i = 0; i < DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.count; i++) {
 			DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.exists[i] = atoi(strtok(NULL, ";"));
 			DATA.Maps.maps[DATA.Maps.mapsCount].sectors[currentSector].corners.positions[i].x = atof(strtok(NULL, ";"));
@@ -152,6 +153,11 @@ void UnloadMap(map_t* map) {
 
 void SaveMap(const char* path, map_t* map) {
 	FILE* file = fopen(path, "w");
+
+	if(!file) {
+		TraceLog(LOG_WARNING, "Couldn't open the file");
+    	return;
+	}
 	
 	for(size_t i = 0; i < map->sectorsCount; i++) {
 		fprintf(file, "%d;%f;%d;%f;%f;%zu",
@@ -173,4 +179,35 @@ void SaveMap(const char* path, map_t* map) {
 	}
 
 	fclose(file);
+}
+
+void CopyMap(map_t* dst, const map_t* src) {
+    dst->id = src->id;
+    dst->sectorsCount = src->sectorsCount;
+
+    dst->sectors = malloc(src->sectorsCount * sizeof(sector_t));
+
+    for(size_t i = 0; i < src->sectorsCount; i++) {
+        dst->sectors[i] = src->sectors[i];
+
+        size_t count = src->sectors[i].corners.count;
+
+        dst->sectors[i].corners.exists =
+            malloc(count * sizeof(bool));
+
+        memcpy(
+            dst->sectors[i].corners.exists,
+            src->sectors[i].corners.exists,
+            count * sizeof(bool)
+        );
+
+        dst->sectors[i].corners.positions =
+            malloc(count * sizeof(Vector2));
+
+        memcpy(
+            dst->sectors[i].corners.positions,
+            src->sectors[i].corners.positions,
+            count * sizeof(Vector2)
+        );
+    }
 }

@@ -42,6 +42,7 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
  
 Vector2 SnapToGrid(Vector2 pos) { return (Vector2){ roundf(pos.x), roundf(pos.y) }; }
  
@@ -53,6 +54,7 @@ void AddSector(void) {
 
 	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.count = 0;
 	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.positions = NULL;
+	DATA.MapMaker.map.sectors[DATA.MapMaker.selectedSector].corners.exists = NULL;
 
 	DATA.MapMaker.sectorColors = realloc(DATA.MapMaker.sectorColors, DATA.MapMaker.map.sectorsCount * sizeof(Color));
 	DATA.MapMaker.sectorColors[DATA.MapMaker.map.sectorsCount - 1] = GetRandomDarkColor();
@@ -76,13 +78,15 @@ void AddCorner(void) {
  
 	DATA.MapMaker.map.sectors[sel].corners.count++;
 	DATA.MapMaker.map.sectors[sel].corners.positions = realloc(DATA.MapMaker.map.sectors[sel].corners.positions, DATA.MapMaker.map.sectors[sel].corners.count * sizeof(Vector2));
+	DATA.MapMaker.map.sectors[sel].corners.exists = realloc(DATA.MapMaker.map.sectors[sel].corners.exists, DATA.MapMaker.map.sectors[sel].corners.count * sizeof(bool));
 	DATA.MapMaker.selectedCorner = DATA.MapMaker.map.sectors[sel].corners.count - 1;
- 
+
 	Vector2 pos = GetScreenToWorld2D(GetMousePosition(), DATA.MapMaker.camera);
  
 	if(!IsKeyDown(KEY_LEFT_CONTROL)) { pos = SnapToGrid(pos); }
 	if(!IsKeyDown(KEY_LEFT_SHIFT)) { pos = SnapToExistingCornerIFItsClose(pos); }
  
+	DATA.MapMaker.map.sectors[sel].corners.exists[DATA.MapMaker.selectedCorner] = true;
 	DATA.MapMaker.map.sectors[sel].corners.positions[DATA.MapMaker.selectedCorner] = pos;
 }
  
@@ -146,15 +150,40 @@ void HandleDrag(void) {
 		DATA.MapMaker.isDragging = false;
 	}
 }
- 
-void HandleInput(void) {
-	if(IsKeyReleased(KEY_N)) { AddSector(); AddCorner(); }
-	if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) { AddCorner(); }
-	if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) { HandleSelection(); }
-	HandleCamera();
-	HandleDrag();
+
+void HandleSaveLoad(void) {
+	if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) { DATA.MapMaker.saveMode = true; }
+	if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L)) { DATA.MapMaker.loadMode = true; }
+
+	if(DATA.MapMaker.saveMode) {
+		if(IsKeyPressed(KEY_ESCAPE)) { DATA.MapMaker.saveMode = false; }
+
+		DoPathInput(&DATA.MapMaker.path, &DATA.MapMaker.lenghtOfPath, &DATA.MapMaker.sizeOfPath);
+
+		if(IsKeyPressed(KEY_ENTER) && DATA.MapMaker.path && DATA.MapMaker.lenghtOfPath > 0) {
+			SaveMap(DATA.MapMaker.path, &DATA.MapMaker.map);
+
+			DATA.MapMaker.saveMode = false;
+		}
+	}
+	if(DATA.MapMaker.loadMode) {
+		if(IsKeyPressed(KEY_ESCAPE)) { DATA.MapMaker.loadMode = false; }
+
+		DoPathInput(&DATA.MapMaker.path, &DATA.MapMaker.lenghtOfPath, &DATA.MapMaker.sizeOfPath);
+
+		if(IsKeyPressed(KEY_ENTER) && DATA.MapMaker.path && DATA.MapMaker.lenghtOfPath > 0) {
+			// Yes, I've done more efficient version of this. But it added completly unneccecery complecicy to map system for a thing that will be used only once. So yes, as much as it hurts me, I'm doing unnececery memory allocations :0
+			map_t* tempMap = LoadMap(DATA.MapMaker.path);
+			
+			CopyMap(&DATA.MapMaker.map, tempMap);
+
+			UnloadMap(tempMap);
+
+			DATA.MapMaker.loadMode = false;
+		}
+	}
 }
- 
+
 void DrawMYGrid(void) {
 	Vector2 topLeft = GetScreenToWorld2D((Vector2){ 0, 0 }, DATA.MapMaker.camera);
 	Vector2 bottomRight = GetScreenToWorld2D((Vector2){ (float)DATA.Info.screenWidth, (float)DATA.Info.screenHeight }, DATA.MapMaker.camera);
@@ -188,9 +217,12 @@ void CleanupMapMaker(void) {
 	if(DATA.MapMaker.map.sectors) {
 		for(size_t i = 0; i < DATA.MapMaker.map.sectorsCount; i++) {
 			if(DATA.MapMaker.map.sectors[i].corners.positions) { free(DATA.MapMaker.map.sectors[i].corners.positions); }
+			if(DATA.MapMaker.map.sectors[i].corners.exists) { free(DATA.MapMaker.map.sectors[i].corners.exists); }
 		}
 		free(DATA.MapMaker.map.sectors);
 	}
+
+	if(DATA.MapMaker.path) { free(DATA.MapMaker.path); }
 }
  
 void InitMapMaker(void) {
@@ -223,19 +255,26 @@ void MapMaker(void) {
 	while(DATA.gamestate == GAMESTATE_MAPMAKER && !WindowShouldClose()) {
 		BeginDrawing();
 		ClearBackground(WHITE);
- 
-		HandleInput();
+
+		if(IsKeyReleased(KEY_N)) { AddSector(); AddCorner(); }
+		if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) { AddCorner(); }
+		if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) { HandleSelection(); }
+
+		HandleCamera();
+		HandleDrag();
  
 		BeginMode2D(DATA.MapMaker.camera);
 
 		DrawMYGrid();
+
 		DrawSectors();
 
 		EndMode2D();
  
+		HandleSaveLoad();
+
 		EndDrawing();
 	}
  
 	CleanupMapMaker();
 }
-

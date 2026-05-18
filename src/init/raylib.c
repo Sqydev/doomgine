@@ -42,4 +42,6 @@
 void InitRaylib(void) {
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(DATA.Info.windowWidth, DATA.Info.windowHeight, "Doomgine");
+
+	SetExitKey(KEY_NULL);
 }
