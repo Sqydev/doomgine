@@ -42,6 +42,9 @@
 Color GetRandomDarkColor(void);
 Color GetLighterColor(Color color, float factor);
 
+Color GetColorBasedOnIndex(size_t index);
+
+char* ExpandPath(const char* path);
 void DoPathInput(char** path, size_t* lengthOfPath, size_t* sizeOfPath);
 
 #endif

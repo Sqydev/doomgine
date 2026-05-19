@@ -37,8 +37,10 @@
 
 #include "../coredata.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 Color GetRandomDarkColor(void) {
     Color c;
@@ -74,6 +76,22 @@ Color GetLighterColor(Color color, float factor) {
 		color.b * factor,
 		color.a
 	};
+}
+
+Color GetColorBasedOnIndex(size_t index) {
+    uint32_t h = 2166136261u;
+
+    h ^= (uint32_t)(index);
+	h *= 16777619u;
+
+    h ^= h >> 16;
+    h *= 0x45d9f3bu;
+    h ^= h >> 16;
+
+    float hue = (float)(h & 0xFF) / 255.0f * 360.0f;
+    float sat = 0.6f + (float)((h >> 8)  & 0xFF) / 255.0f * 0.4f;
+    float val = 0.5f + (float)((h >> 16) & 0xFF) / 255.0f * 0.3f;
+    return ColorFromHSV(hue, sat, val);
 }
 
 void DoPathInput(char** path, size_t* lengthOfPath, size_t* sizeOfPath) {
@@ -117,4 +135,30 @@ void DoPathInput(char** path, size_t* lengthOfPath, size_t* sizeOfPath) {
     DrawRectangleLinesEx(box, 2, BLACK);
 
     DrawText(*path, 15, 20, 20, BLACK);
+}
+
+char* ExpandPath(const char* path) {
+    if(!path) {
+        return NULL;
+	}
+
+    if(!(path[0] == '~' && path[1] == '/')) {
+		return strdup(path);
+	}
+
+    const char* home = getenv("HOME");
+    if(!home) {
+        return strdup(path);
+	}
+
+    size_t len = strlen(home) + strlen(path);
+
+    char* out = malloc(len);
+    if(!out) {
+        return NULL;
+	}
+
+    sprintf(out, "%s/%s", home, path + 2);
+
+    return out;
 }

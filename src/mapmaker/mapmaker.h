@@ -36,6 +36,25 @@
 #ifndef DOOMGINE_MAPMAKER_H
 #define DOOMGINE_MAPMAKER_H
 
+#include <raylib.h>
+
 void MapMaker(void);
+
+void DrawPropertiesPanel(void);
+
+void HandlePropertiesPanel(void);
+
+void HandleSaveLoad(void);
+
+Vector2 SnapToGrid(Vector2 pos);
+
+void AddSector(void);
+void AddCorner(void);
+
+void HandleCamera(void);
+
+void DrawMYGrid(void);
+
+Vector2 SnapToExistingCornerIFItsClose(Vector2 pos);
 
 #endif

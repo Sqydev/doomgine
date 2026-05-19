@@ -69,6 +69,10 @@ map_t* GetMapById(size_t id) {
 
 map_t* LoadMap(const char* path) {
 	FILE* file = fopen(path, "r");
+	if(!file) {
+		TraceLog(LOG_WARNING, "Couldn't open the file");
+    	return NULL;
+	}
 
 	DATA.Maps.maps = realloc(DATA.Maps.maps, (DATA.Maps.mapsCount + 1) * sizeof(map_t));
 
@@ -153,7 +157,6 @@ void UnloadMap(map_t* map) {
 
 void SaveMap(const char* path, map_t* map) {
 	FILE* file = fopen(path, "w");
-
 	if(!file) {
 		TraceLog(LOG_WARNING, "Couldn't open the file");
     	return;
@@ -181,10 +184,18 @@ void SaveMap(const char* path, map_t* map) {
 	fclose(file);
 }
 
+// It will aoutomaticly free the dst
 void CopyMap(map_t* dst, const map_t* src) {
+    if(dst->sectors) {
+        for(size_t i = 0; i < dst->sectorsCount; i++) {
+            if(dst->sectors[i].corners.exists) { free(dst->sectors[i].corners.exists); }
+            if(dst->sectors[i].corners.positions) { free(dst->sectors[i].corners.positions); }
+        }
+        free(dst->sectors);
+    }
+
     dst->id = src->id;
     dst->sectorsCount = src->sectorsCount;
-
     dst->sectors = malloc(src->sectorsCount * sizeof(sector_t));
 
     for(size_t i = 0; i < src->sectorsCount; i++) {
@@ -192,22 +203,10 @@ void CopyMap(map_t* dst, const map_t* src) {
 
         size_t count = src->sectors[i].corners.count;
 
-        dst->sectors[i].corners.exists =
-            malloc(count * sizeof(bool));
+        dst->sectors[i].corners.exists = malloc(count * sizeof(bool));
+        memcpy(dst->sectors[i].corners.exists, src->sectors[i].corners.exists, count * sizeof(bool));
 
-        memcpy(
-            dst->sectors[i].corners.exists,
-            src->sectors[i].corners.exists,
-            count * sizeof(bool)
-        );
-
-        dst->sectors[i].corners.positions =
-            malloc(count * sizeof(Vector2));
-
-        memcpy(
-            dst->sectors[i].corners.positions,
-            src->sectors[i].corners.positions,
-            count * sizeof(Vector2)
-        );
+        dst->sectors[i].corners.positions = malloc(count * sizeof(Vector2));
+        memcpy(dst->sectors[i].corners.positions, src->sectors[i].corners.positions, count * sizeof(Vector2));
     }
 }
