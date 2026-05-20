@@ -40,7 +40,15 @@
 #include <raylib.h>
 
 void DrawPropertiesPanel(void) {
-	DrawRectangle(DATA.Info.windowWidth * 0.80, 0, DATA.Info.windowWidth * 0.20, DATA.Info.windowHeight, GRAY);
+	int PanelX = DATA.Info.windowWidth * 0.80;
+	int PanelWidth = DATA.Info.windowWidth * 0.20;
+
+	DrawRectangle(PanelX, 0, PanelWidth, DATA.Info.windowHeight, GRAY);
+
+	int TextX = PanelX + (PanelX * 0.05);
+	int TextPaddingDown = TextX * 0.2;
+
+	DrawText("Light Level: ", TextX, TextPaddingDown * 1, int fontSize, Color color)
 }
 
 void HandlePropertiesPanel(void) {
