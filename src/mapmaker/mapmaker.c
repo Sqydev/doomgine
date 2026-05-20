@@ -119,6 +119,8 @@ void CleanupMapMaker(void) {
 	}
 
 	if(DATA.MapMaker.path) { free(DATA.MapMaker.path); }
+
+	DATA.MapMaker.inited = false;
 }
  
 void InitMapMaker(void) {
@@ -148,33 +150,29 @@ void MapMaker(void) {
 		InitMapMaker();
 	}
  
-	while(DATA.gamestate == GAMESTATE_MAPMAKER && !WindowShouldClose()) {
-		BeginDrawing();
-		ClearBackground(WHITE);
+	BeginDrawing();
+	ClearBackground(WHITE);
 
-		if(IsKeyReleased(KEY_N)) { AddSector(); AddCorner(); }
-		if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) { AddCorner(); }
-		if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) { HandleSelection(); }
+	if(IsKeyReleased(KEY_N)) { AddSector(); AddCorner(); }
+	if(IsKeyReleased(KEY_C) && DATA.MapMaker.map.sectorsCount > 0) { AddCorner(); }
+	if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) { HandleSelection(); }
 
-		HandlePropertiesPanel();
+	HandlePropertiesPanel();
 
-		HandleCamera();
-		HandleDrag();
+	HandleCamera();
+	HandleDrag();
  
-		BeginMode2D(DATA.MapMaker.camera);
+	BeginMode2D(DATA.MapMaker.camera);
 
-		DrawMYGrid();
+	DrawMYGrid();
 
-		DrawSectors();
+	DrawSectors();
 
-		EndMode2D();
+	EndMode2D();
 
-		DrawPropertiesPanel();
+	DrawPropertiesPanel();
  
-		HandleSaveLoad();
+	HandleSaveLoad();
 
-		EndDrawing();
-	}
- 
-	CleanupMapMaker();
+	EndDrawing();
 }

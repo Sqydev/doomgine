@@ -48,16 +48,17 @@ int main(int argc, char** argv) {
 	Init(&argc, &argv);
 
 	while(!WindowShouldClose()) {
-		switch(DATA.gamestate) {
-			case GAMESTATE_MENU: {
+		if(IsWindowResized()) {
+			DATA.Info.windowWidth = GetScreenWidth();
+			DATA.Info.windowHeight = GetScreenHeight();
+		}
+
+		switch(DATA.state) {
+			case STATE_GAME: {
 				CleanUp();
 				return 0;
 			}
-			case GAMESTATE_INGAME: {
-				CleanUp();
-				return 0;
-			}
-			case GAMESTATE_MAPMAKER: {
+			case STATE_MAPMAKER: {
 				MapMaker();
 				break;
 			}

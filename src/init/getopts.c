@@ -49,7 +49,7 @@ void InitGetOpt(int* argc, char*** argv) {
 	while((optchar = getopt_long(*argc, *argv, "m", long_options, NULL)) != -1) {
 		switch(optchar) {
 			case 'm': {
-				DATA.gamestate = GAMESTATE_MAPMAKER;
+				DATA.state = STATE_MAPMAKER;
 			}
 		}
 	}

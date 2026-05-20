@@ -40,6 +40,8 @@
 
 void MapMaker(void);
 
+void CleanupMapMaker(void);
+
 void DrawPropertiesPanel(void);
 
 void HandlePropertiesPanel(void);

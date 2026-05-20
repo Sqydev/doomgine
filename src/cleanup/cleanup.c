@@ -35,10 +35,14 @@
 
 #include "./cleanup.h"
 
+#include "../mapmaker/mapmaker.h"
+
 void CleanUp(void) {
 	CleanUpRaylib();
 
 	UnloadLoadedMaps();
 
 	CleanUpVars();
+
+	CleanupMapMaker();
 }

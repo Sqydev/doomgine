@@ -33,8 +33,14 @@
 *    source or binary distribution.
 */
 
+#include "./mapmaker.h"
+
+#include "../coredata.h"
+
+#include <raylib.h>
+
 void DrawPropertiesPanel(void) {
-	return;
+	DrawRectangle(DATA.Info.windowWidth * 0.80, 0, DATA.Info.windowWidth * 0.20, DATA.Info.windowHeight, GRAY);
 }
 
 void HandlePropertiesPanel(void) {

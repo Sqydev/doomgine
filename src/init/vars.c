@@ -40,7 +40,7 @@
 #include <raylib.h>
 
 void InitVars(void) {
-	DATA.gamestate = GAMESTATE_MENU;
+	DATA.state = STATE_GAME;
 
 	DATA.Maps.mapsCount = 0;
 	DATA.Maps.lastId = 0;

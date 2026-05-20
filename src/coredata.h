@@ -39,13 +39,13 @@
 #include "./maplib/maplib.h"
 
 typedef enum {
-	GAMESTATE_MENU,
-	GAMESTATE_INGAME,
-	GAMESTATE_MAPMAKER,
-} Gamestate;
+	STATE_MAPMAKER,
+	STATE_GAME,
+	GAMESTATE_CLOSE,
+} State;
 
 typedef struct {
-	Gamestate gamestate;
+	State state;
 
 	struct {
 		unsigned int windowWidth;
